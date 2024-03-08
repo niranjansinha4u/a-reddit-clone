@@ -6,13 +6,13 @@ pipeline {
     }
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
-        APP_NAME = "reddit-clone-pipeline"
+        APP_NAME = "reddit-clone-app"
         RELEASE = "1.0.0"
         DOCKER_USER = "devopsbasic"
         DOCKER_PASS = 'dockerHubId'
         IMAGE_NAME = "${DOCKER_USER}" + "/" + "${APP_NAME}"
         IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
-	JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
+        JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
     }
     stages {
         stage('clean workspace') {
@@ -66,7 +66,7 @@ pipeline {
          stage("Trivy Image Scan") {
              steps {
                  script {
-                     sh ('docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image devopsbasic/reddit-clone-pipeline:latest --no-progress --scanners vuln  --exit-code 0 --severity HIGH,CRITICAL --format table > trivyimage.txt')
+                     sh ('docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image devopsbasic/reddit-clone-app:latest --no-progress --scanners vuln  --exit-code 0 --severity HIGH,CRITICAL --format table > trivyimage.txt')
                     }
                 }
             }
@@ -78,15 +78,15 @@ pipeline {
                     }
                 }
             }
-	stage("Trigger CD Pipeline") {
+            stage("Trigger CD Pipeline") {
             steps {
                 script {
-                    sh "curl -v -k --user clouduser:${JENKINS_API_TOKEN} -X POST -H 'cache-control: no-cache' -H 'content-type: application/x-www-form-urlencoded' --data 'IMAGE_TAG=${IMAGE_TAG}' 'ec2-52-66-90-149.ap-south-1.compute.amazonaws.com:8080/job/Reddit-Clone-CD/buildWithParameters?token=gitops-token'"
+                    sh "curl -v -k --user clouduser:${JENKINS_API_TOKEN} -X POST -H 'cache-control: no-cache' -H 'content-type: application/x-www-form-urlencoded' --data 'IMAGE_TAG=${IMAGE_TAG}' 'ec2-13-127-81-48.ap-south-1.compute.amazonaws.com:8080/job/Reddit-Clone-CI/buildWithParameters?token=gitops-token'"
                 }
             }
          }
      }
-         post {
+      post {
              always {
                  emailext attachLog: true,
                  subject: "'${currentBuild.result}'",
@@ -97,4 +97,6 @@ pipeline {
                  attachmentsPattern: 'trivyfs.txt,trivyimage.txt'
              }
         }
+     
+    
    }
